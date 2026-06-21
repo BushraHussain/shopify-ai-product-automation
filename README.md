@@ -42,16 +42,17 @@ Product Creation
 
 ## Screenshots
 
-### Workflow Overview
+### Product Creation
 
-![Workflow](screenshots/workflow-overview.png)
+![Workflow](create-product.png)
 
-### Product Created
+### Price sync
 
-![Product](screenshots/product-created.png)
+![Product](price-sync.png)
 
 ## Repository Contents
 
-- workflow.json
-- screenshots/
+- product-creation-workflow.json
+- Price-sync-workflow.json
+- screenshots
 - README.md
