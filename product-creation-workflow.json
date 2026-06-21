@@ -1,0 +1,397 @@
+{
+  "name": "Product create flow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1Q2n9WjUFqv208RuNgbjrM4hBYjD9fZL2",
+          "mode": "id"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        -176
+      ],
+      "id": "2aaca279-b1f3-4dd9-a622-7c50ed4c506d",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "hvLrFGjy06zUULst",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{$json[\"id\"]}}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -80,
+        -176
+      ],
+      "id": "8ff4d21a-fd8d-4dd8-8eec-05d168192b58",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "hvLrFGjy06zUULst",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "text": "Generate a short catchy title and one-line description for this image.\nReturn ONLY valid JSON without markdown or code fences.\nFormat:\n{\n  \"title\": \"<title>\",\n  \"description\": \"<description>\"\n}",
+        "inputType": "base64",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        128,
+        -176
+      ],
+      "id": "06e8be06-0053-4f45-9ce6-f559ab1a50c3",
+      "name": "Analyze image",
+      "credentials": {
+        "openAiApi": {
+          "id": "xdSPMxM2tmQdz5te",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: JSON.parse($json[\"content\"])\n}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        -176
+      ],
+      "id": "cbe0e17a-1fad-4b3c-a73a-a3f914283366",
+      "name": "JSON Output"
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "product",
+        "title": "={{ $json.title }}",
+        "additionalFields": {
+          "body_html": "={{ $json.description }}",
+          "images": [
+            {
+              "src": "=https://drive.google.com/uc?export=download&id={{$node[\"Google Drive Trigger\"].json[\"id\"]}}\n"
+            }
+          ],
+          "published_at": "2025-10-29T00:00:00"
+        }
+      },
+      "type": "n8n-nodes-base.shopify",
+      "typeVersion": 1,
+      "position": [
+        544,
+        -176
+      ],
+      "id": "7b4cb59e-68c3-4db1-b14e-5eb799ad42f0",
+      "name": "Create a product",
+      "credentials": {
+        "shopifyAccessTokenApi": {
+          "id": "UsOwYXplV7kKDHgY",
+          "name": "Shopify Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://blackbox-9887.myshopify.com/admin/api/2024-07/variants/{{$node[\"Create a product\"].json[\"variants\"][0][\"id\"]}}.json",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Shopify-Access-Token",
+              "value": "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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"variant\": {\n    \"id\": \"{{$node['Create a product'].json['variants'][0]['id']}}\",\n    \"price\": 1000\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1216,
+        -176
+      ],
+      "id": "f6e67030-4952-4d71-ab9c-6072b24527a1",
+      "name": "HTTP Request",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "title": "BlackBox Pricing",
+        "sheetsUi": {
+          "sheetValues": [
+            {
+              "title": "products"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        752,
+        -176
+      ],
+      "id": "34128f39-7cc2-4d80-b093-4c29d4c89778",
+      "name": "Create spreadsheet",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XB6AYxGPlt5oTwTT",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1vRbLLTbIUiEFPnO0X_zSXn8vR4fKLl8IkM_wTvk_AMg",
+          "mode": "list",
+          "cachedResultName": "BlackBox Pricing",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vRbLLTbIUiEFPnO0X_zSXn8vR4fKLl8IkM_wTvk_AMg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 738744163,
+          "mode": "list",
+          "cachedResultName": "products",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vRbLLTbIUiEFPnO0X_zSXn8vR4fKLl8IkM_wTvk_AMg/edit#gid=738744163"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sku": "={{ $('Create a product').item.json.id }}",
+            "title": "={{ $('Create a product').item.json.title }}",
+            "description": "={{ $('Create a product').item.json.body_html }}",
+            "updated_at": "={{$now}}",
+            "variant_id": "={{$node[\"Create a product\"].json[\"variants\"][0][\"id\"]}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "sku",
+              "displayName": "sku",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "variant_id",
+              "displayName": "variant_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        960,
+        -176
+      ],
+      "id": "ad51899c-5889-4f92-b927-37ed205792b7",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XB6AYxGPlt5oTwTT",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "JSON Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSON Output": {
+      "main": [
+        [
+          {
+            "node": "Create a product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a product": {
+      "main": [
+        [
+          {
+            "node": "Create spreadsheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create spreadsheet": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Google Drive Trigger": {
+      "lastTimeChecked": "2025-10-26T21:17:31Z"
+    }
+  },
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

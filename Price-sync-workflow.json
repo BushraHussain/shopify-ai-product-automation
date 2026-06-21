@@ -1,0 +1,219 @@
+{
+  "name": "Price sync",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1vRbLLTbIUiEFPnO0X_zSXn8vR4fKLl8IkM_wTvk_AMg",
+          "mode": "list",
+          "cachedResultName": "BlackBox Pricing",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vRbLLTbIUiEFPnO0X_zSXn8vR4fKLl8IkM_wTvk_AMg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 738744163,
+          "mode": "list",
+          "cachedResultName": "products",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vRbLLTbIUiEFPnO0X_zSXn8vR4fKLl8IkM_wTvk_AMg/edit#gid=738744163"
+        },
+        "event": "rowUpdate",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8e20a916-1074-4a00-a3bb-920ac97af0d1",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "OHBJxVbm1vt0v3zw",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1vRbLLTbIUiEFPnO0X_zSXn8vR4fKLl8IkM_wTvk_AMg",
+          "mode": "list",
+          "cachedResultName": "BlackBox Pricing",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vRbLLTbIUiEFPnO0X_zSXn8vR4fKLl8IkM_wTvk_AMg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 738744163,
+          "mode": "list",
+          "cachedResultName": "products",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vRbLLTbIUiEFPnO0X_zSXn8vR4fKLl8IkM_wTvk_AMg/edit#gid=738744163"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "762481eb-9962-4ea5-8cf4-73508609d169",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XB6AYxGPlt5oTwTT",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f190a44c-2be9-463e-b6d3-fc2326dd68d5",
+              "leftValue": "={{ Number($json.price) > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "56898c56-d87e-4a44-a597-0dceeb04a884",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://blackbox-9887.myshopify.com/admin/api/2024-07/variants/{{$json[\"variant_id\"]}}.json",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Shopify-Access-Token",
+              "value": ""
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "=json",
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "jsonBody": "={\n  \"variant\": {\n    \"id\": \"{{$json['variant_id']}}\",\n    \"price\": \"{{$json['price']}}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        624,
+        -144
+      ],
+      "id": "cd5f09bc-7d5f-4a67-b101-d030022b9aa0",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        624,
+        96
+      ],
+      "id": "c09fddfb-e3e5-4ae7-b2ab-2613f5c6a87d",
+      "name": "No Operation, do nothing"
+    }
+  ],
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Google Sheets Trigger": {
+      "documentId": "1vRbLLTbIUiEFPnO0X_zSXn8vR4fKLl8IkM_wTvk_AMg",
+      "sheetId": 738744163,
+      "lastRevision": 29,
+      "lastRevisionLink": "https://docs.google.com/spreadsheets/export?id=1vRbLLTbIUiEFPnO0X_zSXn8vR4fKLl8IkM_wTvk_AMg&revision=29&exportFormat=xlsx"
+    }
+  },
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
